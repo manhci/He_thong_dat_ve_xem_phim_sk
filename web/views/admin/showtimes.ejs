@@ -1,0 +1,90 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">Quản Lý Suất Chiếu</h1>
+
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+<% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+<!-- ADD SHOWTIME FORM -->
+<div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+  <h3 style="color: var(--accent-gold); margin-bottom: 1rem;">➕ Lên Lịch Suất Chiếu Mới</h3>
+  <form action="/admin/showtimes" method="POST">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+      <div class="form-group">
+        <label for="event_id">Phim / Sự Kiện</label>
+        <select id="event_id" name="event_id" class="form-control" required>
+          <% events.forEach(e => { %>
+            <option value="<%= e.id %>"><%= e.title %> (<%= e.duration_minutes %>p)</option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="venue_id">Phòng Chiếu</label>
+        <select id="venue_id" name="venue_id" class="form-control" required>
+          <% venues.forEach(v => { %>
+            <option value="<%= v.id %>"><%= v.name %> (<%= v.capacity %> ghế)</option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="starts_at">Thời Gian Bắt Đầu</label>
+        <input type="datetime-local" id="starts_at" name="starts_at" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label for="price_standard">Giá Vé Thường (VNĐ)</label>
+        <input type="number" id="price_standard" name="price_standard" class="form-control" required min="0" step="5000" value="80000">
+      </div>
+      <div class="form-group">
+        <label for="price_vip">Giá Vé VIP (VNĐ)</label>
+        <input type="number" id="price_vip" name="price_vip" class="form-control" required min="0" step="5000" value="110000">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Lên Lịch Suất Chiếu</button>
+  </form>
+</div>
+
+<!-- SHOWTIME LIST -->
+<div class="table-responsive">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Phim / Sự Kiện</th>
+        <th>Phòng Chiếu</th>
+        <th>Giờ Bắt Đầu</th>
+        <th>Giờ Kết Thúc</th>
+        <th>Giá Thường / VIP</th>
+        <th>Vé Đã Đặt</th>
+        <th>Trạng Thái</th>
+        <th>Thao Tác</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% showtimes.forEach(st => { %>
+        <tr>
+          <td><strong><%= st.event_title %></strong></td>
+          <td><%= st.venue_name %></td>
+          <td><%= new Date(st.starts_at).toLocaleString('vi-VN') %></td>
+          <td><%= new Date(st.ends_at).toLocaleTimeString('vi-VN') %></td>
+          <td><%= parseFloat(st.price_standard).toLocaleString('vi-VN') %>đ / <%= parseFloat(st.price_vip).toLocaleString('vi-VN') %>đ</td>
+          <td><strong style="color: var(--accent-cyan);"><%= st.booked_count %></strong></td>
+          <td>
+            <span class="badge-role" style="background: <%= st.status === 'scheduled' ? 'var(--accent-green)' : '#6b7280' %>; color: #fff;">
+              <%= st.status %>
+            </span>
+          </td>
+          <td>
+            <% if (st.status === 'scheduled') { %>
+              <form action="/admin/showtimes/<%= st.id %>/cancel" method="POST" onsubmit="return confirm('Hủy suất chiếu này sẽ hủy toàn bộ các vé đã đặt liên quan. Xác nhận?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-danger btn-sm">Hủy Suất</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../layout/footer') %>

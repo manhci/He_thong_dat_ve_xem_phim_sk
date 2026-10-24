@@ -1,0 +1,138 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">
+  Bàn Làm Việc Nhân Viên (Quầy Vé &amp; Thu Ngân)
+</h1>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+<% if (success) { %>
+  <div class="alert alert-success"><%= success %></div>
+<% } %>
+
+<!-- LOOKUP FORM -->
+<div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+  <h2 style="font-size: 1.15rem; color: var(--accent-gold); margin-bottom: 1rem;">🔍 Tra Cứu Đặt Vé Khách Hàng</h2>
+  <form action="/staff" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+    <input type="text" name="q" class="form-control" style="max-width: 400px;" placeholder="Nhập mã đặt vé (BK-...) hoặc tên khách..." value="<%= query %>" autofocus>
+    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+    <% if (query) { %>
+      <a href="/staff" class="btn btn-secondary">Đặt lại</a>
+    <% } %>
+  </form>
+</div>
+
+<!-- SEARCH RESULTS -->
+<% if (query) { %>
+  <h2 style="font-size: 1.3rem; color: #fff; margin-bottom: 1rem;">Kết quả tìm kiếm cho "<%= query %>" (<%= searchResults.length %>)</h2>
+  <% if (searchResults.length === 0) { %>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Không tìm thấy đặt vé nào khớp với từ khóa.</p>
+  <% } else { %>
+    <div class="table-responsive" style="margin-bottom: 2.5rem;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Mã Vé</th>
+            <th>Khách Hàng</th>
+            <th>Phim / Sự Kiện</th>
+            <th>Suất Chiếu</th>
+            <th>Ghế</th>
+            <th>Tổng Tiền</th>
+            <th>Trạng Thái</th>
+            <th>Xác Nhận Thanh Toán / Hủy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% searchResults.forEach(b => { %>
+            <tr>
+              <td><strong style="color: var(--accent-gold); font-family: monospace;"><%= b.booking_code %></strong></td>
+              <td><%= b.customer_name %><br><span style="font-size: 0.75rem; color: var(--text-muted);"><%= b.customer_email %></span></td>
+              <td><%= b.event_title %></td>
+              <td><%= new Date(b.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %> (<%= b.venue_name %>)</td>
+              <td><strong><%= b.seat_labels || 'Chưa chọn' %></strong></td>
+              <td><strong style="color: var(--accent-gold);"><%= parseFloat(b.total_amount).toLocaleString('vi-VN') %>đ</strong></td>
+              <td>
+                <span class="badge-role" style="background: <%= b.status === 'confirmed' ? 'var(--accent-green)' : (b.status === 'checked_in' ? 'var(--accent-cyan)' : (b.status === 'pending' ? '#d97706' : '#6b7280')) %>; color: #fff;">
+                  <%= b.status %>
+                </span>
+              </td>
+              <td>
+                <% if (b.status === 'pending') { %>
+                  <form action="/staff/bookings/<%= b.booking_code %>/pay" method="POST" style="margin-bottom: 0.4rem; display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <select name="payment_method" class="filter-select" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                      <option value="cash">Tiền mặt</option>
+                      <option value="card">Thẻ ngân hàng</option>
+                      <option value="qr">Mã QR</option>
+                    </select>
+                    <input type="number" name="amount_paid" class="filter-input" style="width: 100px; padding: 0.25rem 0.5rem; font-size: 0.8rem;" value="<%= b.total_amount %>" min="<%= b.total_amount %>" placeholder="Tiền nhận" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Thu Tiền</button>
+                  </form>
+                <% } %>
+                <div style="display: flex; gap: 0.4rem;">
+                  <a href="/bookings/<%= b.booking_code %>" class="btn btn-secondary btn-sm" target="_blank">Vé</a>
+                  <% if (b.status !== 'checked_in' && b.status !== 'cancelled' && b.status !== 'expired') { %>
+                    <form action="/staff/bookings/<%= b.booking_code %>/cancel" method="POST" onsubmit="return confirm('Xác nhận hủy đơn vé <%= b.booking_code %>?');" style="display:inline;">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="btn btn-danger btn-sm">Hủy</button>
+                    </form>
+                  <% } %>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+<% } %>
+
+<!-- TODAY'S SHOWTIMES -->
+<h2 style="font-size: 1.3rem; color: #fff; margin-bottom: 1rem;">📅 Các Suất Chiếu Diễn Ra Hôm Nay</h2>
+<% if (todayShowtimes.length === 0) { %>
+  <p style="color: var(--text-muted);">Hôm nay không có suất chiếu nào được lên lịch.</p>
+<% } else { %>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Giờ Chiếu</th>
+          <th>Phim / Sự Kiện</th>
+          <th>Phòng Chiếu</th>
+          <th>Đã Bán</th>
+          <th>Trạng Thái</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% todayShowtimes.forEach(st => { %>
+          <tr>
+            <td>
+              <strong style="font-size: 1.1rem; color: #fff;">
+                <%= new Date(st.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+              </strong>
+            </td>
+            <td><strong><%= st.event_title %></strong> (<%= st.event_type === 'movie' ? 'Phim' : 'Sự kiện' %>)</td>
+            <td><%= st.venue_name %></td>
+            <td>
+              <strong><%= st.booked_count %></strong> / <%= st.capacity %> ghế
+            </td>
+            <td>
+              <span class="badge-role" style="background: <%= st.status === 'scheduled' ? 'var(--accent-green)' : '#6b7280' %>; color: #fff;">
+                <%= st.status %>
+              </span>
+            </td>
+            <td>
+              <a href="/staff/showtimes/<%= st.id %>" class="btn btn-cyan btn-sm">
+                Danh Sách Khách &amp; Sơ Đồ
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+
+<%- include('../layout/footer') %>

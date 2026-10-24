@@ -1,0 +1,56 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">Quản Lý Danh Mục</h1>
+
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+<% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+<div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+  <div class="form-card" style="margin: 0;">
+    <h3 style="color: var(--accent-gold); margin-bottom: 1rem;">Thêm Danh Mục Mới</h3>
+    <form action="/admin/categories" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-group">
+        <label for="name">Tên Danh Mục</label>
+        <input type="text" id="name" name="name" class="form-control" required placeholder="VD: Khoa Học Viễn Tưởng">
+      </div>
+      <div class="form-group">
+        <label for="sort_order">Thứ Tự Sắp Xếp</label>
+        <input type="number" id="sort_order" name="sort_order" class="form-control" value="0">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Thêm Danh Mục</button>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tên Danh Mục</th>
+          <th>Thứ Tự</th>
+          <th>Số Sự Kiện</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% categories.forEach(c => { %>
+          <tr>
+            <td><%= c.id %></td>
+            <td><strong><%= c.name %></strong></td>
+            <td><%= c.sort_order %></td>
+            <td><%= c.events_count %></td>
+            <td>
+              <form action="/admin/categories/<%= c.id %>/delete" method="POST" onsubmit="return confirm('Xác nhận xóa danh mục này?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-danger btn-sm" <%= parseInt(c.events_count) > 0 ? 'disabled' : '' %>>Xóa</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../layout/footer') %>

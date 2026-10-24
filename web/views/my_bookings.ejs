@@ -1,0 +1,62 @@
+<%- include('layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">Danh Sách Vé Của Tôi</h1>
+
+<% if (bookings.length === 0) { %>
+  <div class="form-card" style="text-align: center; max-width: 600px;">
+    <p style="color: var(--text-muted); font-size: 1.1rem;">Bạn chưa có đặt vé nào.</p>
+    <a href="/" class="btn btn-primary" style="margin-top: 1rem;">Đặt vé ngay</a>
+  </div>
+<% } else { %>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Mã Đặt Vé</th>
+          <th>Phim / Sự Kiện</th>
+          <th>Phòng</th>
+          <th>Thời Gian Chiếu</th>
+          <th>Ghế</th>
+          <th>Tổng Tiền</th>
+          <th>Trạng Thái</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% bookings.forEach(b => { %>
+          <tr>
+            <td>
+              <strong style="color: var(--accent-gold); font-family: monospace;"><%= b.booking_code %></strong>
+            </td>
+            <td><%= b.event_title %></td>
+            <td><%= b.venue_name %></td>
+            <td>
+              <%= new Date(b.starts_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) %> - 
+              <%= new Date(b.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+            </td>
+            <td><strong><%= b.seat_labels || 'Chưa chọn' %></strong></td>
+            <td><%= parseFloat(b.total_amount).toLocaleString('vi-VN') %>đ</td>
+            <td>
+              <span class="badge-role" style="background: <%= b.status === 'confirmed' ? 'var(--accent-green)' : (b.status === 'checked_in' ? 'var(--accent-cyan)' : (b.status === 'pending' ? '#d97706' : '#6b7280')) %>; color: #fff;">
+                <%= b.status %>
+              </span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.5rem;">
+                <a href="/bookings/<%= b.booking_code %>" class="btn btn-secondary btn-sm">Xem vé</a>
+                <% if (['pending', 'confirmed'].includes(b.status) && new Date(b.starts_at) > new Date()) { %>
+                  <form action="/bookings/<%= b.booking_code %>/cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé này không?');">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-danger btn-sm">Hủy vé</button>
+                  </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+
+<%- include('layout/footer') %>

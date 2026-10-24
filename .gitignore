@@ -1,0 +1,21 @@
+# Environment & secrets
+.env
+nginx/certs/*.key
+nginx/certs/*.crt
+
+# Dependencies
+node_modules/
+
+# Evidence & audit docs
+evidence/
+docs/AUDIT.md
+
+# Uploads except .gitkeep
+web/public/uploads/*
+!web/public/uploads/.gitkeep
+
+# Docker overrides & logs & volumes
+docker-compose.override.yml
+*.log
+volumes/
+data/

@@ -1,0 +1,55 @@
+<% 
+  const activeUser = locals.currentUser || locals.user || null;
+  const path = locals.currentPath || '';
+  const token = locals.csrfToken || '';
+%>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= locals.title || 'Cinema Star' %> | Cinema &amp; Event Booking</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      🎬 Cinema<span>Star</span>
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="/" class="<%= path === '/' ? 'active' : '' %>">Phim &amp; Sự Kiện</a></li>
+        <% if (activeUser) { %>
+          <% if (activeUser.role === 'customer') { %>
+            <li><a href="/my-bookings" class="<%= path === '/my-bookings' ? 'active' : '' %>">Vé Của Tôi</a></li>
+          <% } %>
+          <% if (activeUser.role === 'staff' || activeUser.role === 'admin') { %>
+            <li><a href="/staff" class="<%= path.startsWith('/staff') ? 'active' : '' %>">Quầy &amp; Soát Vé</a></li>
+            <li><a href="/staff/checkin" class="<%= path === '/staff/checkin' ? 'active' : '' %>">Soát Vé</a></li>
+          <% } %>
+          <% if (activeUser.role === 'admin') { %>
+            <li><a href="/admin/dashboard" class="<%= path === '/admin/dashboard' ? 'active' : '' %>">KPI Dashboard</a></li>
+            <li><a href="/admin/events" class="<%= path === '/admin/events' ? 'active' : '' %>">QL Sự Kiện</a></li>
+            <li><a href="/admin/showtimes" class="<%= path === '/admin/showtimes' ? 'active' : '' %>">QL Suất Chiếu</a></li>
+            <li><a href="/admin/venues" class="<%= path === '/admin/venues' ? 'active' : '' %>">QL Phòng</a></li>
+            <li><a href="/admin/categories" class="<%= path === '/admin/categories' ? 'active' : '' %>">Danh Mục</a></li>
+            <li><a href="/admin/staff" class="<%= path === '/admin/staff' ? 'active' : '' %>">Nhân Viên</a></li>
+          <% } %>
+        <% } %>
+      </ul>
+    </nav>
+    <div class="nav-user">
+      <% if (activeUser) { %>
+        <span class="badge-role badge-<%= activeUser.role %>"><%= activeUser.role %></span>
+        <span style="font-size: 0.85rem; color: #fff; font-weight: 600;"><%= activeUser.full_name %></span>
+        <form action="/logout" method="POST" style="display:inline;">
+          <input type="hidden" name="_csrf" value="<%= token %>">
+          <button type="submit" class="btn btn-secondary btn-sm">Đăng xuất</button>
+        </form>
+      <% } else { %>
+        <a href="/login" class="btn btn-secondary btn-sm">Đăng nhập</a>
+        <a href="/register" class="btn btn-primary btn-sm">Đăng ký</a>
+      <% } %>
+    </div>
+  </header>
+  <main class="container">

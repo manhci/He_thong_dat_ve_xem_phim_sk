@@ -1,0 +1,114 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">Quản Lý Phim &amp; Sự Kiện</h1>
+
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+<% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+<!-- ADD EVENT FORM -->
+<div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+  <h3 style="color: var(--accent-gold); margin-bottom: 1rem;">➕ Tạo Mới Phim / Sự Kiện (Kèm Upload Poster)</h3>
+  <form action="/admin/events" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+      <div class="form-group">
+        <label for="title">Tên Phim / Sự Kiện</label>
+        <input type="text" id="title" name="title" class="form-control" required placeholder="Tên tác phẩm">
+      </div>
+      <div class="form-group">
+        <label for="category_id">Danh Mục</label>
+        <select id="category_id" name="category_id" class="form-control" required>
+          <% categories.forEach(c => { %>
+            <option value="<%= c.id %>"><%= c.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="type">Loại</label>
+        <select id="type" name="type" class="form-control" required>
+          <option value="movie">Phim (movie)</option>
+          <option value="event">Sự kiện (event)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="duration_minutes">Thời lượng (phút)</label>
+        <input type="number" id="duration_minutes" name="duration_minutes" class="form-control" required min="1" value="120">
+      </div>
+      <div class="form-group">
+        <label for="age_rating">Độ tuổi</label>
+        <select id="age_rating" name="age_rating" class="form-control">
+          <option value="P">P (Mọi lứa tuổi)</option>
+          <option value="K">K (Dưới 13 tuổi có bảo hộ)</option>
+          <option value="T13">T13 (Từ 13 tuổi)</option>
+          <option value="T16">T16 (Từ 16 tuổi)</option>
+          <option value="T18">T18 (Từ 18 tuổi)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="language">Ngôn ngữ</label>
+        <input type="text" id="language" name="language" class="form-control" value="Tiếng Việt">
+      </div>
+      <div class="form-group">
+        <label for="status">Trạng thái ban đầu</label>
+        <select id="status" name="status" class="form-control">
+          <option value="draft">Bản nháp (draft)</option>
+          <option value="published">Xuất bản (published)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="poster">Tải Lên Poster (Tối đa 2MB, .jpg, .png, .webp)</label>
+        <input type="file" id="poster" name="poster" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label for="description">Mô tả nội dung</label>
+      <textarea id="description" name="description" class="form-control" rows="2" placeholder="Tóm tắt cốt truyện hoặc nội dung sự kiện..."></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Lưu Phim / Sự Kiện</button>
+  </form>
+</div>
+
+<!-- EVENT LIST -->
+<div class="table-responsive">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Poster</th>
+        <th>Tên Phim / Sự Kiện</th>
+        <th>Danh Mục</th>
+        <th>Thời Lượng</th>
+        <th>Trạng Thái</th>
+        <th>Đổi Trạng Thái</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% events.forEach(ev => { %>
+        <tr>
+          <td><img src="<%= ev.poster_path %>" style="width: 45px; height: 60px; object-fit: cover; border-radius: 4px;"></td>
+          <td><strong><%= ev.title %></strong><br><span style="font-size: 0.75rem; color: var(--text-muted);"><%= ev.type %> • <%= ev.age_rating %></span></td>
+          <td><%= ev.category_name %></td>
+          <td><%= ev.duration_minutes %> phút</td>
+          <td>
+            <span class="badge-role" style="background: <%= ev.status === 'published' ? 'var(--accent-green)' : (ev.status === 'draft' ? '#6b7280' : 'var(--accent-red)') %>; color: #fff;">
+              <%= ev.status %>
+            </span>
+          </td>
+          <td>
+            <form action="/admin/events/<%= ev.id %>/status" method="POST" style="display: flex; gap: 0.4rem; align-items: center;">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <select name="new_status" class="filter-select" style="padding: 0.2rem 0.4rem; font-size: 0.8rem;">
+                <option value="draft" <%= ev.status === 'draft' ? 'selected' : '' %>>draft</option>
+                <option value="published" <%= ev.status === 'published' ? 'selected' : '' %>>published</option>
+                <option value="cancelled" <%= ev.status === 'cancelled' ? 'selected' : '' %>>cancelled</option>
+                <option value="completed" <%= ev.status === 'completed' ? 'selected' : '' %>>completed</option>
+              </select>
+              <button type="submit" class="btn btn-secondary btn-sm">Cập nhật</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../layout/footer') %>

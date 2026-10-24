@@ -1,0 +1,72 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">Quản Lý Phòng Chiếu &amp; Địa Điểm</h1>
+
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+<% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+<div style="display: grid; grid-template-columns: 360px 1fr; gap: 2rem;">
+  <div class="form-card" style="margin: 0;">
+    <h3 style="color: var(--accent-gold); margin-bottom: 1rem;">Thêm Phòng Chiếu Mới</h3>
+    <form action="/admin/venues" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-group">
+        <label for="name">Tên Phòng / Hội Trường</label>
+        <input type="text" id="name" name="name" class="form-control" required placeholder="VD: Phòng Chiếu 5">
+      </div>
+      <div class="form-group">
+        <label for="address">Địa Chỉ / Tầng</label>
+        <input type="text" id="address" name="address" class="form-control" required placeholder="VD: Tầng 4, Tòa nhà Star">
+      </div>
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+        <div>
+          <label for="rows_count">Số Hàng (A, B...)</label>
+          <input type="number" id="rows_count" name="rows_count" class="form-control" required min="1" max="26" value="6">
+        </div>
+        <div>
+          <label for="seats_per_row">Số Ghế / Hàng</label>
+          <input type="number" id="seats_per_row" name="seats_per_row" class="form-control" required min="1" max="50" value="8">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="vip_rows">Số Hàng Ghế VIP (hàng cuối)</label>
+        <input type="number" id="vip_rows" name="vip_rows" class="form-control" min="0" value="2">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Tạo Phòng Chiếu</button>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tên Phòng</th>
+          <th>Địa Chỉ</th>
+          <th>Kích Thước</th>
+          <th>Sức Chứa</th>
+          <th>Hàng VIP</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% venues.forEach(v => { %>
+          <tr>
+            <td><strong><%= v.name %></strong></td>
+            <td><%= v.address %></td>
+            <td><%= v.rows_count %> hàng x <%= v.seats_per_row %> ghế</td>
+            <td><strong style="color: var(--accent-gold);"><%= v.capacity %></strong> ghế</td>
+            <td><%= v.vip_rows %> hàng cuối</td>
+            <td>
+              <form action="/admin/venues/<%= v.id %>/delete" method="POST" onsubmit="return confirm('Xác nhận xóa phòng chiếu này?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-danger btn-sm" <%= parseInt(v.showtimes_count) > 0 ? 'disabled' : '' %>>Xóa</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../layout/footer') %>

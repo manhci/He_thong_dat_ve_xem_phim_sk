@@ -1,0 +1,77 @@
+<%- include('layout/header') %>
+
+<div class="filter-bar">
+  <form action="/" method="GET" style="display: contents;">
+    <div class="filter-group">
+      <select name="type" class="filter-select" onchange="this.form.submit()">
+        <option value="all" <%= filterType === 'all' ? 'selected' : '' %>>Tất cả thể loại</option>
+        <option value="movie" <%= filterType === 'movie' ? 'selected' : '' %>>🎬 Phim chiếu rạp</option>
+        <option value="event" <%= filterType === 'event' ? 'selected' : '' %>>🎤 Sự kiện / Workshop</option>
+      </select>
+
+      <select name="category_id" class="filter-select" onchange="this.form.submit()">
+        <option value="">Tất cả danh mục</option>
+        <% categories.forEach(cat => { %>
+          <option value="<%= cat.id %>" <%= filterCategory == cat.id ? 'selected' : '' %>><%= cat.name %></option>
+        <% }) %>
+      </select>
+
+      <select name="sort" class="filter-select" onchange="this.form.submit()">
+        <option value="newest" <%= currentSort === 'newest' ? 'selected' : '' %>>Mới nhất</option>
+        <option value="price_asc" <%= currentSort === 'price_asc' ? 'selected' : '' %>>Giá tăng dần</option>
+        <option value="price_desc" <%= currentSort === 'price_desc' ? 'selected' : '' %>>Giá giảm dần</option>
+        <option value="title_asc" <%= currentSort === 'title_asc' ? 'selected' : '' %>>Tên A-Z</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <input type="text" name="search" class="filter-input" placeholder="Tìm tên phim, sự kiện..." value="<%= searchQuery %>">
+      <button type="submit" class="btn btn-primary btn-sm">Tìm kiếm</button>
+      <% if (searchQuery || filterCategory || filterType !== 'all') { %>
+        <a href="/" class="btn btn-secondary btn-sm">Đặt lại</a>
+      <% } %>
+    </div>
+  </form>
+</div>
+
+<h2 style="margin-bottom: 1.25rem; font-size: 1.5rem; color: #fff;">
+  <%= filterType === 'movie' ? 'Phim Đang Chiếu' : (filterType === 'event' ? 'Sự Kiện Sắp Diễn Ra' : 'Khám Phá Phim & Sự Kiện') %>
+  <span style="font-size: 1rem; color: var(--text-muted); font-weight: normal;">(<%= events.length %> kết quả)</span>
+</h2>
+
+<% if (events.length === 0) { %>
+  <div class="form-card" style="text-align: center; max-width: 600px;">
+    <p style="color: var(--text-muted); font-size: 1.1rem;">Không tìm thấy phim hoặc sự kiện nào phù hợp với bộ lọc.</p>
+    <a href="/" class="btn btn-primary" style="margin-top: 1rem;">Xem tất cả</a>
+  </div>
+<% } else { %>
+  <div class="grid-cards">
+    <% events.forEach(ev => { %>
+      <div class="movie-card">
+        <div class="poster-wrapper">
+          <img src="<%= ev.poster_path %>" alt="<%= ev.title %>" class="poster-img" loading="lazy">
+          <span class="age-badge"><%= ev.age_rating %></span>
+          <span class="type-badge"><%= ev.type === 'movie' ? 'Phim' : 'Sự kiện' %></span>
+        </div>
+        <div class="card-body">
+          <h3 class="card-title"><%= ev.title %></h3>
+          <p class="card-meta">
+            <span>🏷️ <%= ev.category_name %></span> • <span>⏱️ <%= ev.duration_minutes %> phút</span>
+          </p>
+          <div class="card-footer">
+            <span class="card-price">
+              <% if (ev.min_price !== null) { %>
+                <%= parseFloat(ev.min_price) === 0 ? 'Miễn phí' : 'Từ ' + parseFloat(ev.min_price).toLocaleString('vi-VN') + 'đ' %>
+              <% } else { %>
+                <span style="color: var(--text-muted); font-size: 0.8rem;">Chưa có lịch</span>
+              <% } %>
+            </span>
+            <a href="/events/<%= ev.id %>" class="btn btn-primary btn-sm">Chi tiết</a>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('layout/footer') %>

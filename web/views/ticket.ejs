@@ -1,0 +1,68 @@
+<%- include('layout/header') %>
+
+<div class="ticket-container" style="max-width: 650px; margin: 2rem auto; background: var(--bg-card); border: 2px dashed rgba(245, 158, 11, 0.6); border-radius: var(--radius-lg); padding: 2rem; box-shadow: var(--shadow-main);">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: #fff;">VÉ ĐIỆN TỬ (E-TICKET)</h2>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Mã đặt vé:</span>
+      <strong style="font-size: 1.15rem; color: var(--accent-gold); font-family: monospace;"><%= booking.booking_code %></strong>
+    </div>
+    <div style="text-align: right;">
+      <span class="badge-role" style="background: <%= booking.status === 'confirmed' ? 'var(--accent-green)' : (booking.status === 'checked_in' ? 'var(--accent-cyan)' : 'var(--accent-red)') %>; color: #fff; font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+        <%= booking.status.toUpperCase() %>
+      </span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h3 style="font-size: 1.35rem; color: #fff; margin-bottom: 0.5rem;"><%= booking.event_title %></h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.3rem;">
+        🏛️ <strong>Phòng:</strong> <%= booking.venue_name %> (<%= booking.venue_address %>)
+      </p>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.3rem;">
+        📅 <strong>Suất chiếu:</strong> <%= new Date(booking.starts_at).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }) %> - 
+        <strong><%= new Date(booking.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %></strong>
+      </p>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.3rem;">
+        👤 <strong>Khách hàng:</strong> <%= booking.customer_name %> (<%= booking.customer_email %>)
+      </p>
+      <p style="font-size: 0.95rem; color: #fff; margin-top: 0.75rem;">
+        🪑 <strong>Ghế đã đặt:</strong> 
+        <span style="color: var(--accent-gold); font-weight: 800; font-size: 1.1rem;">
+          <%= booking.seats.map(s => s.seat_label + ' (' + s.seat_class.toUpperCase() + ')').join(', ') %>
+        </span>
+      </p>
+      <p style="font-size: 0.95rem; color: #fff; margin-top: 0.3rem;">
+        💰 <strong>Tổng thanh toán:</strong> 
+        <span style="color: var(--accent-gold); font-weight: 800;">
+          <%= parseFloat(booking.total_amount) === 0 ? 'Miễn phí' : parseFloat(booking.total_amount).toLocaleString('vi-VN') + 'đ' %>
+        </span>
+      </p>
+    </div>
+
+    <% if (qrDataUrl) { %>
+      <div style="text-align: center; background: #fff; padding: 0.75rem; border-radius: var(--radius-sm);" class="ticket-qr">
+        <img src="<%= qrDataUrl %>" alt="Mã QR vé" style="width: 160px; height: 160px; display: block;">
+        <span style="font-size: 0.72rem; color: #000; font-family: monospace; font-weight: bold;">QUÉT ĐỂ CHECK-IN</span>
+      </div>
+    <% } else if (booking.status === 'pending') { %>
+      <div style="text-align: center; padding: 1rem; background: rgba(234, 88, 12, 0.15); border: 1px solid var(--accent-gold); border-radius: var(--radius-sm);">
+        <p style="color: var(--accent-gold); font-size: 0.85rem; font-weight: bold;">ĐANG GIỮ CHỖ</p>
+        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem;">
+          Hạn thanh toán tại quầy:<br>
+          <strong><%= booking.expires_at ? new Date(booking.expires_at).toLocaleTimeString('vi-VN') : '' %></strong>
+        </p>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="no-print" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+    <a href="/my-bookings" class="btn btn-secondary btn-sm">Quay lại danh sách vé</a>
+    <button onclick="window.print()" class="btn btn-primary btn-sm">
+      🖨️ In Vé Điện Tử
+    </button>
+  </div>
+</div>
+
+<%- include('layout/footer') %>

@@ -1,0 +1,12 @@
+<%- include('layout/header') %>
+<div class="form-card" style="text-align: center; max-width: 600px; border-color: var(--accent-gold);">
+  <h2 style="color: var(--accent-gold); margin-bottom: 1rem;">⚠️ <%= title %></h2>
+  <div class="alert alert-error" style="margin-bottom: 1.5rem;">
+    <%= message %>
+  </div>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    Do có nhiều khách hàng cùng thực hiện đặt vé, ghế này đã được người khác xác nhận trước bạn vài giây.
+  </p>
+  <a href="/showtimes/<%= showtimeId %>/book" class="btn btn-primary">Chọn Ghế Khác</a>
+</div>
+<%- include('layout/footer') %>

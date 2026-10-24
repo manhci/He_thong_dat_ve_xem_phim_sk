@@ -1,0 +1,83 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">Quản Lý Tài Khoản Nhân Viên</h1>
+
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+<% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+<div style="display: grid; grid-template-columns: 360px 1fr; gap: 2rem;">
+  <div class="form-card" style="margin: 0;">
+    <h3 style="color: var(--accent-gold); margin-bottom: 1rem;">Tạo Tài Khoản Nhân Viên</h3>
+    <form action="/admin/staff" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-group">
+        <label for="full_name">Họ và Tên</label>
+        <input type="text" id="full_name" name="full_name" class="form-control" required placeholder="VD: Nguyễn Văn A">
+      </div>
+      <div class="form-group">
+        <label for="username">Tên Đăng Nhập</label>
+        <input type="text" id="username" name="username" class="form-control" required placeholder="nhanvien03">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" class="form-control" required placeholder="staff03@cinema.local">
+      </div>
+      <div class="form-group">
+        <label for="password">Mật Khẩu</label>
+        <input type="password" id="password" name="password" class="form-control" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label for="role">Vai Trò</label>
+        <select id="role" name="role" class="form-control">
+          <option value="staff">Nhân viên quầy / Soát vé (staff)</option>
+          <option value="admin">Quản trị viên (admin)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Tạo Tài Khoản</button>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tên Đăng Nhập</th>
+          <th>Họ Tên</th>
+          <th>Email</th>
+          <th>Vai Trò</th>
+          <th>Trạng Thái</th>
+          <th>Thao Tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% staffList.forEach(s => { %>
+          <tr>
+            <td><strong><%= s.username %></strong></td>
+            <td><%= s.full_name %></td>
+            <td><%= s.email %></td>
+            <td><span class="badge-role badge-<%= s.role %>"><%= s.role %></span></td>
+            <td>
+              <span class="badge-role" style="background: <%= s.is_active ? 'var(--accent-green)' : 'var(--accent-red)' %>; color: #fff;">
+                <%= s.is_active ? 'Hoạt động' : 'Đã khóa' %>
+              </span>
+            </td>
+            <td>
+              <% if (s.id !== currentUser.id) { %>
+                <form action="/admin/staff/<%= s.id %>/toggle" method="POST" style="display:inline;">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn <%= s.is_active ? 'btn-danger' : 'btn-primary' %> btn-sm">
+                    <%= s.is_active ? 'Khóa' : 'Mở khóa' %>
+                  </button>
+                </form>
+              <% } else { %>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">(Chính bạn)</span>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../layout/footer') %>

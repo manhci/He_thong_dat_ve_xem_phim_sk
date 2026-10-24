@@ -1,0 +1,206 @@
+<%- include('layout/header') %>
+
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.8rem; font-weight: 800; color: #fff;"><%= showtime.event_title %></h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      🏛️ <strong><%= showtime.venue_name %></strong> | 
+      📅 <%= new Date(showtime.starts_at).toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }) %> |
+      ⏰ <%= new Date(showtime.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+    </p>
+  </div>
+  <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1.25rem; text-align: right;">
+    <div style="font-size: 0.8rem; color: var(--text-muted);">GIÁ VÉ</div>
+    <div style="font-size: 0.9rem; color: #fff;">
+      Thường: <strong style="color: var(--accent-gold);"><%= parseFloat(showtime.price_standard).toLocaleString('vi-VN') %>đ</strong>
+      <% if (showtime.vip_rows > 0) { %>
+        | VIP: <strong style="color: var(--accent-vip);"><%= parseFloat(showtime.price_vip).toLocaleString('vi-VN') %>đ</strong>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<% if (error) { %>
+  <div class="alert alert-error"><%= error %></div>
+<% } %>
+
+<!-- SCREEN / STAGE -->
+<div class="screen-container">
+  <div class="screen-bar"></div>
+  <span class="screen-label"><%= showtime.event_type === 'movie' ? 'MÀN HÌNH CHIẾU' : 'SÂN KHẤU BIỂU DIỄN' %></span>
+</div>
+
+<!-- SEAT LEGEND -->
+<div class="seat-legend">
+  <div class="legend-item"><div class="legend-color seat-standard"></div> Ghế thường</div>
+  <% if (showtime.vip_rows > 0) { %>
+    <div class="legend-item"><div class="legend-color seat-vip"></div> Ghế VIP</div>
+  <% } %>
+  <div class="legend-item"><div class="legend-color seat-selected"></div> Ghế bạn chọn</div>
+  <div class="legend-item"><div class="legend-color seat-holding"></div> Đang giữ chỗ</div>
+  <div class="legend-item"><div class="legend-color seat-booked"></div> Đã bán</div>
+</div>
+
+<!-- SEAT MAP FORM -->
+<form id="bookingForm" action="/showtimes/<%= showtime.id %>/book" method="POST">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="seat-grid">
+    <% for (let r = 0; r < showtime.rows_count; r++) { 
+         const rowChar = String.fromCharCode(65 + r);
+         const isVip = (r >= showtime.rows_count - showtime.vip_rows && showtime.vip_rows > 0);
+    %>
+      <div class="seat-row">
+        <span class="row-label"><%= rowChar %></span>
+        <% for (let c = 1; c <= showtime.seats_per_row; c++) { 
+             const seatLabel = rowChar + c;
+             const occ = occupiedMap[seatLabel];
+             let seatClass = isVip ? 'seat-vip' : 'seat-standard';
+             let isDisabled = false;
+
+             if (occ) {
+               if (occ.status === 'pending') {
+                 seatClass = occ.isMine ? 'seat-selected' : 'seat-holding';
+               } else if (occ.status === 'confirmed' || occ.status === 'checked_in') {
+                 seatClass = 'seat-booked';
+                 isDisabled = true;
+               }
+             }
+        %>
+          <button type="button"
+                  class="seat-btn <%= seatClass %>"
+                  data-label="<%= seatLabel %>"
+                  data-class="<%= isVip ? 'vip' : 'standard' %>"
+                  data-price="<%= isVip ? showtime.price_vip : showtime.price_standard %>"
+                  <%= isDisabled ? 'disabled' : '' %>>
+            <%= c %>
+          </button>
+        <% } %>
+        <span class="row-label"><%= rowChar %></span>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- BOOKING SUMMARY BAR -->
+  <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="font-size: 0.85rem; color: var(--text-muted);">Ghế đã chọn (Tối đa 8 ghế):</div>
+      <div id="selectedSeatsDisplay" style="font-size: 1.15rem; font-weight: 700; color: #fff;">Chưa chọn ghế</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <div style="text-align: right;">
+        <div style="font-size: 0.85rem; color: var(--text-muted);">Tổng tiền:</div>
+        <div id="totalPriceDisplay" style="font-size: 1.45rem; font-weight: 800; color: var(--accent-gold);">0đ</div>
+      </div>
+      <button type="submit" id="submitBtn" class="btn btn-primary" disabled>
+        Tiếp Tục Đặt Vé
+      </button>
+    </div>
+  </div>
+</form>
+
+<script>
+  const showtimeId = <%= showtime.id %>;
+  const form = document.getElementById('bookingForm');
+  const selectedSeatsDisplay = document.getElementById('selectedSeatsDisplay');
+  const totalPriceDisplay = document.getElementById('totalPriceDisplay');
+  const submitBtn = document.getElementById('submitBtn');
+
+  let selectedSeats = new Map();
+
+  // Seat click handler
+  document.querySelectorAll('.seat-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const label = btn.dataset.label;
+      const sClass = btn.dataset.class;
+      const price = parseFloat(btn.dataset.price);
+
+      if (btn.classList.contains('seat-booked') || btn.classList.contains('seat-holding')) {
+        return;
+      }
+
+      if (selectedSeats.has(label)) {
+        selectedSeats.delete(label);
+        btn.classList.remove('seat-selected');
+      } else {
+        if (selectedSeats.size >= 8) {
+          alert('Bạn chỉ được chọn tối đa 8 ghế trong một lần đặt!');
+          return;
+        }
+        selectedSeats.set(label, { class: sClass, price });
+        btn.classList.add('seat-selected');
+      }
+      updateSummary();
+    });
+  });
+
+  function updateSummary() {
+    // Remove previous hidden inputs
+    document.querySelectorAll('input[name="seats"]').forEach(el => el.remove());
+
+    if (selectedSeats.size === 0) {
+      selectedSeatsDisplay.textContent = 'Chưa chọn ghế';
+      totalPriceDisplay.textContent = '0đ';
+      submitBtn.disabled = true;
+      return;
+    }
+
+    const labels = Array.from(selectedSeats.keys()).sort();
+    selectedSeatsDisplay.textContent = labels.join(', ');
+
+    let total = 0;
+    labels.forEach(lbl => {
+      const seat = selectedSeats.get(lbl);
+      total += seat.price;
+
+      // Add hidden input for each seat
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'seats';
+      input.value = lbl;
+      form.appendChild(input);
+    });
+
+    totalPriceDisplay.textContent = total.toLocaleString('vi-VN') + 'đ';
+    submitBtn.disabled = false;
+  }
+
+  // Live polling for seat status updates every 10 seconds
+  setInterval(async () => {
+    try {
+      const res = await fetch('/showtimes/' + showtimeId + '/seats');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.success) return;
+
+      const seatStatusMap = new Map();
+      data.seats.forEach(s => seatStatusMap.set(s.label, s.status));
+
+      document.querySelectorAll('.seat-btn').forEach(btn => {
+        const label = btn.dataset.label;
+        const status = seatStatusMap.get(label);
+
+        // If another customer just booked or held this seat
+        if (status === 'booked' || status === 'holding') {
+          if (selectedSeats.has(label)) {
+            selectedSeats.delete(label);
+            updateSummary();
+            alert('Ghế ' + label + ' vừa được người khác giữ hoặc đặt vé!');
+          }
+          btn.disabled = true;
+          btn.className = 'seat-btn ' + (status === 'booked' ? 'seat-booked' : 'seat-holding');
+        } else if (!status) {
+          // Seat became available again
+          btn.disabled = false;
+          if (!selectedSeats.has(label)) {
+            btn.className = 'seat-btn ' + (btn.dataset.class === 'vip' ? 'seat-vip' : 'seat-standard');
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Seat polling error:', e);
+    }
+  }, 10000);
+</script>
+
+<%- include('layout/footer') %>

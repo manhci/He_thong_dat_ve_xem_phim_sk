@@ -1,0 +1,84 @@
+<%- include('layout/header') %>
+
+<div style="display: grid; grid-template-columns: 320px 1fr; gap: 2.5rem; margin-bottom: 2.5rem;">
+  <div>
+    <div class="poster-wrapper" style="border-radius: var(--radius-md); border: 1px solid var(--border-color); box-shadow: var(--shadow-main);">
+      <img src="<%= event.poster_path %>" alt="<%= event.title %>" class="poster-img">
+      <span class="age-badge"><%= event.age_rating %></span>
+      <span class="type-badge"><%= event.type === 'movie' ? 'Phim' : 'Sự kiện' %></span>
+    </div>
+  </div>
+
+  <div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 0.75rem;"><%= event.title %></h1>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+      <span>🏷️ <strong>Thể loại:</strong> <%= event.category_name %></span>
+      <span>⏱️ <strong>Thời lượng:</strong> <%= event.duration_minutes %> phút</span>
+      <span>🗣️ <strong>Ngôn ngữ:</strong> <%= event.language %></span>
+      <span>🔞 <strong>Độ tuổi:</strong> <%= event.age_rating %></span>
+    </div>
+
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 2rem;">
+      <h3 style="color: var(--accent-gold); font-size: 1.1rem; margin-bottom: 0.5rem;">Giới thiệu nội dung</h3>
+      <p style="color: var(--text-main); line-height: 1.7; font-size: 0.95rem;"><%= event.description %></p>
+    </div>
+  </div>
+</div>
+
+<h2 style="font-size: 1.6rem; color: #fff; margin-bottom: 1.25rem; border-bottom: 2px solid rgba(245, 158, 11, 0.5); padding-bottom: 0.5rem;">
+  Lịch Chiếu &amp; Suất Diễn
+</h2>
+
+<% if (Object.keys(groupedShowtimes).length === 0) { %>
+  <div class="alert alert-error">Hiện chưa có suất chiếu nào được lên lịch cho sự kiện này.</div>
+<% } else { %>
+  <% Object.keys(groupedShowtimes).forEach(dateKey => { %>
+    <div style="margin-bottom: 2rem; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
+      <h3 style="color: var(--accent-cyan); font-size: 1.15rem; margin-bottom: 1rem; text-transform: capitalize;">
+        📅 <%= dateKey %>
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+        <% groupedShowtimes[dateKey].forEach(st => { %>
+          <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem;">
+                <span style="font-size: 1.35rem; font-weight: 800; color: #fff;">
+                  <%= new Date(st.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+                </span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">
+                  đến <%= new Date(st.ends_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+                </span>
+              </div>
+              <p style="font-size: 0.9rem; font-weight: 600; color: var(--accent-gold); margin-bottom: 0.5rem;">
+                🏛️ <%= st.venue_name %>
+              </p>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                Giá: <strong><%= parseFloat(st.price_standard).toLocaleString('vi-VN') %>đ</strong>
+                <% if (st.vip_rows > 0) { %>
+                  (VIP: <%= parseFloat(st.price_vip).toLocaleString('vi-VN') %>đ)
+                <% } %>
+              </p>
+              <p style="font-size: 0.8rem; color: <%= st.available_seats > 10 ? 'var(--accent-green)' : 'var(--accent-red)' %>; margin-bottom: 1rem;">
+                🪑 Còn trống: <strong><%= st.available_seats %></strong> / <%= st.capacity %> ghế
+              </p>
+            </div>
+
+            <div>
+              <% if (st.status === 'cancelled') { %>
+                <button class="btn btn-danger btn-sm" style="width: 100%;" disabled>Đã hủy</button>
+              <% } else if (st.is_ended) { %>
+                <button class="btn btn-secondary btn-sm" style="width: 100%;" disabled>Đã kết thúc</button>
+              <% } else { %>
+                <a href="/showtimes/<%= st.id %>/book" class="btn btn-primary btn-sm" style="width: 100%;">
+                  Chọn Ghế Đặt Vé
+                </a>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% }) %>
+<% } %>
+
+<%- include('layout/footer') %>

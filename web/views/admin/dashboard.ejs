@@ -1,0 +1,105 @@
+<%- include('../layout/header') %>
+
+<h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-bottom: 1.5rem;">
+  📊 Báo Cáo KPI &amp; Quản Trị Hệ Thống
+</h1>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <span class="kpi-title">Doanh Thu Hôm Nay</span>
+    <span class="kpi-value"><%= parseFloat(kpi.revenue_today).toLocaleString('vi-VN') %>đ</span>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-title">Đơn Đặt Vé Hôm Nay</span>
+    <span class="kpi-value"><%= kpi.bookings_today %></span>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-title">Suất Chiếu Sắp Diễn Ra</span>
+    <span class="kpi-value"><%= kpi.upcoming_showtimes %></span>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-title">Tỷ Lệ Lấp Đầy Ghế TB</span>
+    <span class="kpi-value" style="color: var(--accent-cyan);"><%= occupancyRate %>%</span>
+  </div>
+</div>
+
+<!-- REVENUE BAR CHART (7 DAYS) -->
+<div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+  <h2 style="font-size: 1.25rem; color: #fff; margin-bottom: 1.25rem;">📈 Doanh Thu 7 Ngày Gần Nhất</h2>
+  <div style="display: flex; align-items: flex-end; gap: 1.5rem; height: 180px; padding-top: 1rem; border-bottom: 1px solid var(--border-color);">
+    <% dailyRevenue.forEach(d => { 
+         const val = parseFloat(d.daily_revenue);
+         const heightPct = Math.max(10, Math.round((val / maxDaily) * 150));
+    %>
+      <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; height: 100%; justify-content: flex-end;">
+        <span style="font-size: 0.72rem; color: var(--accent-gold); font-weight: bold;">
+          <%= val > 0 ? (val / 1000).toFixed(0) + 'k' : '0' %>
+        </span>
+        <div style="width: 100%; max-width: 45px; height: <%= heightPct %>px; background: linear-gradient(180deg, var(--accent-gold), #b45309); border-radius: 4px 4px 0 0; transition: height 0.3s ease;"></div>
+        <span style="font-size: 0.78rem; color: var(--text-muted);"><%= d.display_date %></span>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <!-- TOP MOVIES / EVENTS -->
+  <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
+    <h3 style="font-size: 1.15rem; color: #fff; margin-bottom: 1rem;">🏆 Top Phim &amp; Sự Kiện Bán Chạy</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tên Phim / Sự Kiện</th>
+          <th>Vé Đã Bán</th>
+          <th>Tổng Doanh Thu</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% topEvents.forEach(ev => { %>
+          <tr>
+            <td><strong><%= ev.title %></strong></td>
+            <td><strong style="color: var(--accent-cyan);"><%= ev.tickets_sold %></strong> vé</td>
+            <td><%= parseFloat(ev.total_revenue).toLocaleString('vi-VN') %>đ</td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CHECK-IN RATE PER SHOWTIME -->
+  <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem;">
+    <h3 style="font-size: 1.15rem; color: #fff; margin-bottom: 1rem;">🎫 Tỷ Lệ Check-in Theo Suất Chiếu</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Suất Chiếu</th>
+          <th>Vé Đặt</th>
+          <th>Đã Check-in</th>
+          <th>Tỷ Lệ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% checkinStats.forEach(st => { %>
+          <tr>
+            <td>
+              <%= st.event_title %><br>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">
+                <%= new Date(st.starts_at).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) %> - <%= new Date(st.starts_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %>
+              </span>
+            </td>
+            <td><%= st.total_confirmed %></td>
+            <td><%= st.checked_in_count %></td>
+            <td>
+              <strong style="color: <%= parseFloat(st.checkin_percentage) >= 80 ? 'var(--accent-green)' : 'var(--accent-gold)' %>;">
+                <%= st.checkin_percentage %>%
+              </strong>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../layout/footer') %>
