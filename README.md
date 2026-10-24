@@ -36,10 +36,28 @@ Chứng chỉ `server.crt` và khóa bí mật `server.key` sẽ được tự �
 
 ---
 
-## 3. Hướng dẫn khởi động nhanh
+## 3. Khởi tạo người dùng Exporter cho CSDL PostgreSQL
+
+Đối với trường hợp volume CSDL PostgreSQL đã tồn tại từ trước, tạo người dùng `exporter` an toàn bằng lệnh:
 ```bash
-# Khởi động toàn bộ hệ thống
-docker compose up -d --build
+docker compose exec db psql -U cinema_app -d cinemadb -c "
+DO \$\$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'exporter') THEN
+    CREATE ROLE exporter LOGIN PASSWORD 'ExporterCinema@2026!Key';
+  END IF;
+END
+\$\$;
+GRANT pg_monitor TO exporter;
+"
+```
+
+---
+
+## 4. Hướng dẫn khởi động hệ thống
+```bash
+# Khởi động toàn bộ các dịch vụ
+docker compose up -d
 
 # Kiểm tra trạng thái các container
 docker compose ps
@@ -47,11 +65,25 @@ docker compose ps
 
 ---
 
-## 4. Kiến trúc và Cổng dịch vụ
+## 5. Kiến trúc Cổng và Đường dẫn Dịch vụ
 - **Web App (HTTPS):** `https://localhost` (Nginx chuyển tiếp đến web container)
 - **pgAdmin (Quản trị CSDL):** `https://localhost/pgadmin/` (Nginx chuyển tiếp đến pgadmin container)
+- **Grafana Monitoring:** `https://localhost/grafana/` (Nginx chuyển tiếp đến grafana container)
 - **Cổng 80 (HTTP):** Tự động chuyển hướng 301 sang HTTPS (Port 443).
-- **Các cổng ứng dụng (3000, 5050, 5432):** Được cô lập hoàn toàn bên trong mạng nội bộ Docker, không publish ra ngoài host.
+- **Các cổng dịch vụ nội bộ (3000, 5050, 5432, 8080, 9090, 9113, 9187):** Được cô lập hoàn toàn trong mạng Docker, không publish ra ngoài host.
 
-> [!NOTE]
-> Khi truy cập qua trình duyệt Windows, do sử dụng chứng chỉ SSL tự ký (Self-Signed), trình duyệt sẽ hiện cảnh báo bảo mật. Bạn chỉ cần chọn **Nâng cao (Advanced)** -> **Tiếp tục truy cập localhost (Proceed to localhost)**.
+---
+
+## 6. Hướng dẫn kiểm tra Prometheus Targets trực tiếp (Tùy chọn cho Báo cáo)
+
+Để truy cập giao diện Prometheus Targets tại `http://localhost:9090/targets` mà không vi phạm nguyên tắc bảo mật (không commit cấu hình mở cổng):
+1. Tạo tệp `docker-compose.override.yml` (đã nằm trong `.gitignore`):
+   ```yaml
+   services:
+     prometheus:
+       ports:
+         - "127.0.0.1:9090:9090"
+   ```
+2. Cập nhật container Prometheus: `docker compose up -d prometheus`
+3. Mở trình duyệt truy cập: `http://localhost:9090/targets` để chụp ảnh báo cáo.
+4. Xóa tệp `docker-compose.override.yml` và chạy lại `docker compose up -d` để đóng cổng.

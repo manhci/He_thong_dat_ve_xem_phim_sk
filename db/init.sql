@@ -209,3 +209,15 @@ INSERT INTO booking_seats (booking_id, showtime_id, seat_label, seat_class, pric
 
 ALTER SEQUENCE bookings_id_seq RESTART WITH 5;
 ALTER SEQUENCE booking_seats_id_seq RESTART WITH 6;
+
+-- ==============================================================================
+-- 8. Prometheus Exporter Role
+-- ==============================================================================
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'exporter') THEN
+    CREATE ROLE exporter LOGIN PASSWORD 'ExporterCinema@2026!Key';
+  END IF;
+END
+$$;
+GRANT pg_monitor TO exporter;
