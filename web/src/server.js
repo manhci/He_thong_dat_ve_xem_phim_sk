@@ -7,6 +7,9 @@ const csrfProtection = require('./middleware/csrf');
 const { startBackgroundCleaner } = require('./services/cleaner');
 
 const app = express();
+
+// Hardening: An header X-Powered-By
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 3000;
 
 // Trust reverse proxy (for X-Forwarded-For IP & secure cookies)
@@ -32,7 +35,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     sameSite: 'strict',
-    secure: false, // will be true behind HTTPS Nginx in Step 3
+    secure: 'auto', // Tu dong Secure khi qua HTTPS Nginx reverse proxy
     maxAge: 24 * 60 * 60 * 1000 // 1 day
   }
 }));
