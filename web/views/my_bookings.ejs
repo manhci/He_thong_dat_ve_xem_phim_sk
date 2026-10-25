@@ -42,10 +42,18 @@
               </span>
             </td>
             <td>
-              <div style="display: flex; gap: 0.5rem;">
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                 <a href="/bookings/<%= b.booking_code %>" class="btn btn-secondary btn-sm">Xem vé</a>
+                <% if (b.status === 'pending') { %>
+                  <form action="/bookings/<%= b.booking_code %>/pay" method="POST" style="margin: 0;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn-success btn-sm" style="background: var(--accent-green); color: #fff; font-weight: 700; border: none; padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); cursor: pointer;">
+                      💳 Đã thanh toán
+                    </button>
+                  </form>
+                <% } %>
                 <% if (['pending', 'confirmed'].includes(b.status) && new Date(b.starts_at) > new Date()) { %>
-                  <form action="/bookings/<%= b.booking_code %>/cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé này không?');">
+                  <form action="/bookings/<%= b.booking_code %>/cancel" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé này không?');" style="margin: 0;">
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="btn btn-danger btn-sm">Hủy vé</button>
                   </form>

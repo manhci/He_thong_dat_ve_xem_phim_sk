@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-# Thu muc chua chung chi
-CERTS_DIR="$(cd "$(dirname "$0")/certs" && pwd)"
+# Thu muc chua chung chi (tu dong tao neu chua ton tai)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+CERTS_DIR="$SCRIPT_DIR/certs"
 mkdir -p "$CERTS_DIR"
 
 # Nhan IP LAN tuy chon tu tham so truyen vao
@@ -26,8 +27,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -subj "/C=VN/ST=HaNoi/L=HaNoi/O=CinemaDevOps/OU=Security/CN=localhost" \
   -addext "subjectAltName=$SAN_CONFIG"
 
-# Phan quyen bao mat cho file khoa rieng
-chmod 600 "$CERTS_DIR/server.key"
+# Phan quyen bao mat cho file khoa rieng (user unprivileged nginx UID 101 doc duoc)
+chmod 644 "$CERTS_DIR/server.key"
 chmod 644 "$CERTS_DIR/server.crt"
 
 echo "Tao chung chi thanh cong:"

@@ -11,6 +11,7 @@ router.post('/showtimes/:id/book', requireAuth, bookingController.postBookSeats)
 // Customer bookings & Tickets
 router.get('/my-bookings', requireAuth, bookingController.getMyBookings);
 router.get('/bookings/:code', bookingController.getTicket);
+router.post('/bookings/:code/pay', requireAuth, bookingController.postCustomerPayBooking);
 router.post('/bookings/:code/cancel', requireAuth, bookingController.postCancelBooking);
 
 module.exports = router;

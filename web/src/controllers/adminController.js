@@ -132,6 +132,7 @@ exports.getEvents = async (req, res) => {
          FROM events e
          JOIN categories c ON e.category_id = c.id
          JOIN users u ON e.created_by = u.id
+         LEFT JOIN showtimes s ON e.id = s.event_id
          GROUP BY e.id, c.name, u.full_name
          ORDER BY e.id DESC`
       ),

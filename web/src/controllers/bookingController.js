@@ -351,11 +351,81 @@ exports.getTicket = async (req, res) => {
       title: 'Vé Điện Tử - ' + booking.booking_code,
       booking,
       qrDataUrl,
+      error: req.query.error || null,
+      success: req.query.success || null,
       user: currentUser
     });
   } catch (err) {
     console.error('[TICKET ERROR]', err);
     res.status(500).render('error', { title: 'Lỗi', message: 'Lỗi tải vé điện tử.', user: req.session.user });
+  }
+};
+
+// POST /bookings/:code/pay - Customer or staff confirms payment for a booking
+exports.postCustomerPayBooking = async (req, res) => {
+  const code = req.params.code;
+  const username = req.session.user.username;
+  const userId = req.session.user.id;
+  const userRole = req.session.user.role;
+
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const bookingRes = await client.query(
+      `SELECT * FROM bookings WHERE booking_code = $1 FOR UPDATE`,
+      [code]
+    );
+
+    if (bookingRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).render('error', { title: '404', message: 'Không tìm thấy đơn đặt vé.', user: req.session.user });
+    }
+
+    const booking = bookingRes.rows[0];
+
+    // Check ownership or staff/admin role
+    if (booking.user_id !== userId && !['staff', 'admin'].includes(userRole)) {
+      await client.query('ROLLBACK');
+      return res.status(403).render('error', { title: '403', message: 'Bạn không có quyền thanh toán cho đơn vé này.', user: req.session.user });
+    }
+
+    if (booking.status !== 'pending') {
+      await client.query('ROLLBACK');
+      return res.redirect(`/bookings/${code}?error=` + encodeURIComponent(`Đơn vé đang ở trạng thái "${booking.status}", không cần thanh toán.`));
+    }
+
+    // Check expiration
+    if (booking.expires_at && new Date(booking.expires_at) < new Date()) {
+      await client.query(`UPDATE bookings SET status = 'expired' WHERE id = $1`, [booking.id]);
+      await client.query(`UPDATE booking_seats SET is_active = false WHERE booking_id = $1`, [booking.id]);
+      await client.query('COMMIT');
+      return res.redirect(`/bookings/${code}?error=` + encodeURIComponent('Đơn vé này đã hết thời gian giữ chỗ.'));
+    }
+
+    const total = parseFloat(booking.total_amount);
+    const method = (req.body && req.body.payment_method && ['cash', 'card', 'qr'].includes(req.body.payment_method)) 
+      ? req.body.payment_method 
+      : 'qr';
+
+    await client.query(
+      `UPDATE bookings 
+       SET status = 'confirmed', payment_method = $1, 
+           amount_paid = $2, change_amount = 0, paid_at = NOW()
+       WHERE id = $3`,
+      [method, total, booking.id]
+    );
+
+    await client.query('COMMIT');
+    console.log(`PAYMENT_CONFIRMED code=${code} method=${method} by=${username}`);
+
+    res.redirect(`/bookings/${code}?success=` + encodeURIComponent('Xác nhận thanh toán thành công! Vé đã sẵn sàng sử dụng.'));
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[CUSTOMER PAY ERROR]', err);
+    res.redirect(`/bookings/${code}?error=` + encodeURIComponent('Lỗi máy chủ khi xác nhận thanh toán.'));
+  } finally {
+    client.release();
   }
 };
 

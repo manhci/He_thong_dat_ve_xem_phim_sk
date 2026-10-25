@@ -14,6 +14,9 @@ docs/AUDIT.md
 web/public/uploads/*
 !web/public/uploads/.gitkeep
 
+# Temporary generator scripts
+*.py
+
 # Docker overrides & logs & volumes
 docker-compose.override.yml
 *.log
